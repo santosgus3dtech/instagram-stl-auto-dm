@@ -1,0 +1,12 @@
+Instagram_STL_AutoDM_Conversa_Codex.md
+.env
+*.db
+data/*.db
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.venv/
+venv/
+env/
