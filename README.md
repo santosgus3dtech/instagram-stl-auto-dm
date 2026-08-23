@@ -5,6 +5,8 @@ comentar uma palavra-chave, como `STL`, em um post configurado.
 
 O projeto usa Python, FastAPI, Webhooks da Meta, SQLite e Private Replies da API
 oficial. A proposta e evitar automacao de interface, scraping ou Selenium.
+Quando a Meta nao entrega webhooks em tempo real por causa de revisao/acesso, o
+backend tambem pode consultar comentarios periodicamente como fallback.
 
 ## Estado atual
 
@@ -16,6 +18,7 @@ MVP iniciado com:
 - filtro por `media_id` e palavra-chave;
 - envio de Private Reply via endpoint de mensagens configuravel;
 - idempotencia com SQLite para nao responder o mesmo comentario duas vezes;
+- fallback opcional por polling de comentarios;
 - testes com payloads falsos, sem chamar a API real.
 
 ## Estrutura
@@ -73,6 +76,14 @@ Para varias automacoes, use `AUTOMATIONS_JSON`:
 
 ```env
 AUTOMATIONS_JSON=[{"media_id":"180...","keyword":"STL","link":"https://example.com/modelo.stl"}]
+```
+
+Se os webhooks da Meta nao chegarem, habilite o polling:
+
+```env
+COMMENT_POLLING_ENABLED=true
+COMMENT_POLLING_INTERVAL_SECONDS=30
+COMMENT_POLLING_LIMIT=25
 ```
 
 ## Rodar localmente

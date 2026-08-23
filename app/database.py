@@ -76,6 +76,31 @@ class CommentDatabase:
                 (json.dumps(response, ensure_ascii=True), comment_id),
             )
 
+    def remember_comment(
+        self,
+        *,
+        comment_id: str,
+        media_id: str,
+        username: str,
+        keyword: str,
+    ) -> bool:
+        with self._connect() as conn:
+            cursor = conn.execute(
+                """
+                INSERT OR IGNORE INTO comment_deliveries (
+                    comment_id,
+                    media_id,
+                    username,
+                    keyword,
+                    status
+                )
+                VALUES (?, ?, ?, ?, 'seen')
+                """,
+                (comment_id, media_id, username, keyword),
+            )
+
+            return cursor.rowcount == 1
+
     def mark_failed(self, comment_id: str, error_message: str) -> None:
         with self._connect() as conn:
             conn.execute(

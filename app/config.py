@@ -45,6 +45,9 @@ class Settings:
     request_timeout_seconds: float
     log_level: str
     automations: tuple[AutomationConfig, ...]
+    comment_polling_enabled: bool
+    comment_polling_interval_seconds: float
+    comment_polling_limit: int
 
     @property
     def message_endpoint(self) -> str:
@@ -149,4 +152,12 @@ def get_settings() -> Settings:
         request_timeout_seconds=float(os.getenv("REQUEST_TIMEOUT_SECONDS", "20")),
         log_level=os.getenv("LOG_LEVEL", "INFO").upper(),
         automations=_load_automations_from_env(),
+        comment_polling_enabled=_parse_bool(
+            os.getenv("COMMENT_POLLING_ENABLED"),
+            default=False,
+        ),
+        comment_polling_interval_seconds=float(
+            os.getenv("COMMENT_POLLING_INTERVAL_SECONDS", "30")
+        ),
+        comment_polling_limit=int(os.getenv("COMMENT_POLLING_LIMIT", "25")),
     )

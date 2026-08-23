@@ -49,3 +49,27 @@ class InstagramClient:
             raise InstagramAPIError(response.status_code, response.text)
 
         return response.json()
+
+    def list_media_comments(self, media_id: str, limit: int = 25) -> list[dict[str, Any]]:
+        if not self.settings.ig_access_token:
+            raise ConfigError("IG_ACCESS_TOKEN is required to list comments.")
+
+        base_url = self.settings.graph_base_url.rstrip("/")
+        response = self.session.get(
+            f"{base_url}/{self.settings.graph_version}/{media_id}/comments",
+            params={
+                "fields": "id,text,username,timestamp",
+                "limit": limit,
+                "access_token": self.settings.ig_access_token,
+            },
+            timeout=self.settings.request_timeout_seconds,
+        )
+
+        if not response.ok:
+            raise InstagramAPIError(response.status_code, response.text)
+
+        payload = response.json()
+        data = payload.get("data", [])
+        if not isinstance(data, list):
+            return []
+        return [item for item in data if isinstance(item, dict)]
