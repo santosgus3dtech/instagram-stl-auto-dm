@@ -39,6 +39,7 @@ async def instagram_webhook(request: Request) -> dict[str, object]:
 
     signature = request.headers.get("x-hub-signature-256")
     if not verify_meta_signature(raw_body, signature, settings.meta_app_secret):
+        logger.warning("Rejected Instagram webhook with invalid signature.")
         raise HTTPException(status_code=403, detail="Invalid request signature.")
 
     try:
@@ -58,6 +59,22 @@ async def instagram_webhook(request: Request) -> dict[str, object]:
 
     sent_count = sum(1 for outcome in outcomes if outcome.action == "sent")
     error_count = sum(1 for outcome in outcomes if outcome.action == "error")
+
+    logger.info(
+        "Instagram webhook processed: received_events=%s sent=%s errors=%s",
+        len(events),
+        sent_count,
+        error_count,
+    )
+    for outcome in outcomes:
+        logger.info(
+            "Instagram webhook outcome: action=%s reason=%s comment_id=%s media_id=%s username=%s",
+            outcome.action,
+            outcome.reason,
+            outcome.comment_id,
+            outcome.media_id,
+            outcome.username,
+        )
 
     return {
         "status": "ok",

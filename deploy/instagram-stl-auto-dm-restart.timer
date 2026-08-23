@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily restart timer for Instagram STL Auto DM backend
+
+[Timer]
+OnCalendar=*-*-* 04:10:00
+RandomizedDelaySec=10m
+Persistent=true
+Unit=instagram-stl-auto-dm-restart.service
+
+[Install]
+WantedBy=timers.target

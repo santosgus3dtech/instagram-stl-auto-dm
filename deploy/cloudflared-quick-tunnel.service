@@ -1,0 +1,15 @@
+[Unit]
+Description=Cloudflare quick tunnel for Instagram STL Auto DM
+After=network-online.target instagram-stl-auto-dm.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=guusebumps
+Group=guusebumps
+ExecStart=/usr/bin/cloudflared tunnel --no-autoupdate --url http://127.0.0.1:8000
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

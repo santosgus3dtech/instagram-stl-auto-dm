@@ -173,3 +173,32 @@ def test_rejects_invalid_signature(client: TestClient):
     )
 
     assert response.status_code == 403
+
+
+def test_accepts_comma_separated_app_secrets(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path,
+):
+    monkeypatch.setenv("VERIFY_TOKEN", "verify-me")
+    monkeypatch.setenv("META_APP_SECRET", f"wrong-secret,{SECRET}")
+    monkeypatch.setenv("IG_ACCESS_TOKEN", "test-token")
+    monkeypatch.setenv("IG_USER_ID", "17841400000000000")
+    monkeypatch.setenv("TARGET_MEDIA_ID", "18000000000000000")
+    monkeypatch.setenv("STL_KEYWORD", "STL")
+    monkeypatch.setenv("STL_LINK", "https://example.com/modelo.stl")
+    monkeypatch.setenv("DATABASE_PATH", str(tmp_path / "bot.db"))
+    get_settings.cache_clear()
+
+    test_client = TestClient(create_app())
+    body = json.dumps({"entry": []}).encode("utf-8")
+
+    response = test_client.post(
+        "/webhook",
+        content=body,
+        headers={
+            "content-type": "application/json",
+            "x-hub-signature-256": _signature(body),
+        },
+    )
+
+    assert response.status_code == 200

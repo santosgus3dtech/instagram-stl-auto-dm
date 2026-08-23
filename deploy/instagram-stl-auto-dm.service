@@ -1,0 +1,17 @@
+[Unit]
+Description=Instagram STL Auto DM backend
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/opt/instagram-stl-auto-dm
+EnvironmentFile=/opt/instagram-stl-auto-dm/.env
+ExecStart=/opt/instagram-stl-auto-dm/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 --no-access-log
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

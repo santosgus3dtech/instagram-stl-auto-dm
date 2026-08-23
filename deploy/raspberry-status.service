@@ -1,0 +1,18 @@
+[Unit]
+Description=Raspberry status dashboard for Instagram STL Auto DM
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=codex
+Group=codex
+WorkingDirectory=/opt/instagram-stl-auto-dm
+Environment=MONITORED_SERVICES=instagram-stl-auto-dm,instagram-stl-auto-dm-tunnel
+Environment=INSTAGRAM_HEALTH_URL=http://127.0.0.1:8000/health
+ExecStart=/opt/instagram-stl-auto-dm/.venv/bin/uvicorn monitor.app:app --host 0.0.0.0 --port 8080
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

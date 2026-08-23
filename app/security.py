@@ -15,10 +15,17 @@ def verify_meta_signature(
     if not signature_header or not signature_header.startswith("sha256="):
         return False
 
-    expected = "sha256=" + hmac.new(
-        app_secret.encode("utf-8"),
-        raw_body,
-        hashlib.sha256,
-    ).hexdigest()
+    secrets = [secret.strip() for secret in app_secret.split(",") if secret.strip()]
+    if not secrets:
+        return True
 
-    return hmac.compare_digest(expected, signature_header)
+    for secret in secrets:
+        expected = "sha256=" + hmac.new(
+            secret.encode("utf-8"),
+            raw_body,
+            hashlib.sha256,
+        ).hexdigest()
+        if hmac.compare_digest(expected, signature_header):
+            return True
+
+    return False

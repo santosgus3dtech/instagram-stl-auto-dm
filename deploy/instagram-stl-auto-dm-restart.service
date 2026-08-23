@@ -1,0 +1,8 @@
+[Unit]
+Description=Scheduled restart for Instagram STL Auto DM backend
+After=network-online.target instagram-stl-auto-dm.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/systemctl try-restart instagram-stl-auto-dm.service

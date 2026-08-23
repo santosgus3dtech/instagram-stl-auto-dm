@@ -100,6 +100,143 @@ HTTPS, por exemplo com ngrok ou Cloudflare Tunnel:
 https://seu-dominio-ou-tunnel/webhook
 ```
 
+## Rodar no Raspberry Pi
+
+O Raspberry deve manter o backend ligado 24h. Use um servico `systemd` para
+iniciar junto com o sistema e reiniciar se cair.
+
+1. Copie ou clone este projeto no Raspberry:
+
+```bash
+sudo mkdir -p /opt/instagram-stl-auto-dm
+sudo chown -R pi:pi /opt/instagram-stl-auto-dm
+git clone <url-do-seu-repositorio> /opt/instagram-stl-auto-dm
+```
+
+Se voce ainda nao subiu para um repositorio remoto, copie a pasta por SSH/SCP
+e mantenha o `.env` fora do Git.
+
+2. Rode o setup:
+
+```bash
+cd /opt/instagram-stl-auto-dm
+chmod +x deploy/raspberry-setup.sh
+sudo ./deploy/raspberry-setup.sh
+```
+
+3. Edite o `.env` no Raspberry com os valores reais:
+
+```bash
+nano /opt/instagram-stl-auto-dm/.env
+```
+
+4. Inicie/reinicie o servico:
+
+```bash
+sudo systemctl restart instagram-stl-auto-dm
+sudo systemctl status instagram-stl-auto-dm --no-pager
+```
+
+5. Teste no proprio Raspberry:
+
+```bash
+curl http://127.0.0.1:8000/health
+```
+
+6. Crie uma URL HTTPS publica apontando para `127.0.0.1:8000` e use no painel
+da Meta:
+
+```text
+https://sua-url-publica/webhook
+```
+
+Para uso real, prefira uma URL fixa. Cloudflare Tunnel com dominio proprio,
+ngrok com dominio reservado, Nginx com HTTPS ou uma VPS evitam trocar a URL de
+callback toda vez que o tunel reiniciar.
+
+Para um teste rapido sem dominio proprio, instale `cloudflared` e rode um
+quick tunnel apontando para o servico local:
+
+```bash
+sudo systemctl status instagram-stl-auto-dm-tunnel --no-pager
+journalctl -u instagram-stl-auto-dm-tunnel --no-pager -n 120 | grep -Eo 'https://[-a-zA-Z0-9.]+\.trycloudflare\.com' | tail -n 1
+```
+
+Use a URL retornada com `/webhook` no painel da Meta. Esse tipo de tunel e bom
+para teste, mas a URL pode mudar quando o servico reinicia.
+
+## Painel de status
+
+O projeto tambem inclui um painel separado para monitorar o Raspberry e os
+servicos da automacao. Ele roda na porta `8080` e mostra:
+
+- se o Raspberry esta online;
+- uptime, memoria, disco e temperatura;
+- se `instagram-stl-auto-dm` esta ativo;
+- se o tunnel publico esta ativo;
+- URL publica atual do webhook, quando encontrada nos logs;
+- console com logs do `systemd`;
+- botao para reiniciar o backend e o tunnel.
+
+No Raspberry:
+
+```bash
+sudo cp /opt/instagram-stl-auto-dm/deploy/raspberry-status.service /etc/systemd/system/raspberry-status.service
+sudo systemctl daemon-reload
+sudo systemctl enable raspberry-status
+sudo systemctl restart raspberry-status
+```
+
+Abra na rede local:
+
+```text
+http://192.168.0.105:8080
+```
+
+JSON direto:
+
+```text
+http://192.168.0.105:8080/api/status
+```
+
+Logs:
+
+```text
+http://192.168.0.105:8080/api/logs/instagram-stl-auto-dm
+http://192.168.0.105:8080/api/logs/instagram-stl-auto-dm-tunnel
+```
+
+Os botoes de restart do painel chamam estes endpoints:
+
+```text
+POST /api/services/instagram-stl-auto-dm/restart
+POST /api/services/instagram-stl-auto-dm-tunnel/restart
+```
+
+Reiniciar `instagram-stl-auto-dm` mantem o tunnel ativo. Reiniciar
+`instagram-stl-auto-dm-tunnel` pode gerar uma nova URL `trycloudflare.com`, que
+tambem precisa ser atualizada no painel da Meta.
+
+## Reinicio automatico
+
+Para reduzir risco de travamento ao longo dos dias, ha um timer opcional que
+reinicia apenas o backend `instagram-stl-auto-dm` diariamente de madrugada. Ele
+nao reinicia o Raspberry inteiro e nao reinicia o tunnel, entao a URL publica
+continua a mesma.
+
+Instalar/ativar no Raspberry:
+
+```bash
+sudo cp /opt/instagram-stl-auto-dm/deploy/instagram-stl-auto-dm-restart.service /etc/systemd/system/
+sudo cp /opt/instagram-stl-auto-dm/deploy/instagram-stl-auto-dm-restart.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now instagram-stl-auto-dm-restart.timer
+systemctl list-timers instagram-stl-auto-dm-restart.timer
+```
+
+Por padrao ele roda todos os dias as `04:10`, com ate 10 minutos de atraso
+aleatorio.
+
 ## Testar
 
 ```bash
