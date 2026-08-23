@@ -101,6 +101,7 @@ def test_matching_comment_sends_private_reply_once(
     assert first.json()["sent"] == 1
     assert second.status_code == 200
     assert second.json()["sent"] == 0
+    assert client.get("/health").json()["messages_sent"] == 1
     assert len(sent_messages) == 1
     assert sent_messages[0][0] == "17900000000000000"
     assert "https://example.com/modelo.stl" in sent_messages[0][1]

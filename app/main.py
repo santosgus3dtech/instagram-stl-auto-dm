@@ -41,10 +41,12 @@ def create_app() -> FastAPI:
 
     @application.get("/health")
     async def health() -> dict[str, str | int]:
+        stats = database.delivery_stats()
         return {
             "status": "ok",
             "automations": len(settings.automations),
             "comment_poller": int(settings.comment_polling_enabled),
+            **stats,
         }
 
     return application

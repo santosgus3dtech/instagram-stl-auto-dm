@@ -115,5 +115,23 @@ class CommentDatabase:
                 (error_message[:2000], comment_id),
             )
 
+    def delivery_stats(self) -> dict[str, int]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT status, COUNT(*)
+                FROM comment_deliveries
+                GROUP BY status
+                """
+            ).fetchall()
+
+        counts = {str(status): int(total) for status, total in rows}
+        return {
+            "messages_sent": counts.get("sent", 0),
+            "comments_seen": counts.get("seen", 0),
+            "delivery_failures": counts.get("failed", 0),
+            "delivery_processing": counts.get("processing", 0),
+        }
+
     def _connect(self) -> sqlite3.Connection:
         return sqlite3.connect(self.database_path)

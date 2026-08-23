@@ -608,7 +608,7 @@ HTML = """<!doctype html>
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
+      grid-template-columns: repeat(5, minmax(0, 1fr));
       gap: 12px;
       margin-bottom: 12px;
     }
@@ -921,6 +921,7 @@ HTML = """<!doctype html>
       <div class="metric"><div class="label">Memoria usada</div><div class="value" id="memory">--</div><div class="hint" id="memory-detail">--</div></div>
       <div class="metric"><div class="label">Disco usado</div><div class="value" id="disk">--</div><div class="hint" id="disk-detail">--</div></div>
       <div class="metric"><div class="label">Temperatura</div><div class="value" id="temperature">--</div><div class="hint" id="load">--</div></div>
+      <div class="metric"><div class="label">DMs enviadas</div><div class="value" id="messages-sent">--</div><div class="hint" id="messages-detail">--</div></div>
     </section>
 
     <section class="section">
@@ -994,6 +995,11 @@ HTML = """<!doctype html>
       node.innerHTML = `<span class="dot"></span><span>${text}</span>`;
     }
 
+    function numberText(value) {
+      const number = Number(value);
+      return Number.isFinite(number) ? number.toLocaleString("pt-BR") : "--";
+    }
+
     function serviceMarkup(service) {
       const state = service.active ? "Ativo" : "Parado";
       const restart = actionableServices.has(service.name)
@@ -1031,6 +1037,7 @@ HTML = """<!doctype html>
         const instagramOk = Boolean(data.instagram && data.instagram.running);
         const tunnelOk = Boolean(data.tunnel && data.tunnel.webhook_url);
         const latency = data.instagram?.health?.latency_ms;
+        const instagramPayload = data.instagram?.health?.payload || {};
 
         setStatusPill("main-status", instagramOk, instagramOk ? "Instagram online" : "Instagram com alerta");
         setStatusPill("health-pill", Boolean(data.instagram?.health?.ok), latency == null ? "Health check" : `Health ${latency} ms`);
@@ -1046,6 +1053,8 @@ HTML = """<!doctype html>
         $("disk-detail").textContent = data.disk?.free_gb == null ? "--" : `${data.disk.free_gb} GB livres de ${data.disk.total_gb} GB`;
         $("temperature").textContent = data.temperature_c == null ? "--" : `${data.temperature_c} C`;
         $("load").textContent = data.load_average ? `load ${data.load_average.join(" / ")}` : "--";
+        $("messages-sent").textContent = numberText(instagramPayload.messages_sent);
+        $("messages-detail").textContent = `vistos ${numberText(instagramPayload.comments_seen)} · falhas ${numberText(instagramPayload.delivery_failures)}`;
         $("services").innerHTML = (data.services || []).map(serviceMarkup).join("");
         renderLogTabs(data.services || []);
         $("webhook").textContent = data.tunnel?.webhook_url || "Tunnel URL nao encontrada nos logs";
