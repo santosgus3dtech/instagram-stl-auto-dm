@@ -3,6 +3,18 @@
 Automacao oficial para enviar uma mensagem privada no Instagram quando alguem
 comentar uma palavra-chave, como `STL`, em um post configurado.
 
+## Destaques para portfolio
+
+- Integracao com Webhooks e Private Replies da Meta.
+- Validacao de assinatura `X-Hub-Signature-256`.
+- Idempotencia com SQLite para evitar respostas duplicadas.
+- Fallback por polling quando webhooks nao chegam em tempo real.
+- Deploy em Raspberry Pi com `systemd`.
+- Painel separado de monitoramento dos servicos.
+- Testes com payloads falsos, sem chamar a API real.
+
+Veja tambem: [`docs/portfolio-case-study.md`](docs/portfolio-case-study.md).
+
 O projeto usa Python, FastAPI, Webhooks da Meta, SQLite e Private Replies da API
 oficial. A proposta e evitar automacao de interface, scraping ou Selenium.
 Quando a Meta nao entrega webhooks em tempo real por causa de revisao/acesso, o
