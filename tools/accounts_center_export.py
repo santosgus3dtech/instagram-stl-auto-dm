@@ -27,17 +27,23 @@ if str(PROJECT_ROOT) not in sys.path:
 from monitor.follow_audit import FollowAuditError, import_latest_from_inbox
 
 
-ACCOUNTS_CENTER_URL = "https://accountscenter.instagram.com/info_and_permissions/dyi/"
-INSTAGRAM_SESSION_CHECK_URL = "https://www.instagram.com/accounts/edit/"
+ACCOUNTS_CENTER_URL = "https://accountscenter.facebook.com/info_and_permissions/dyi/"
+META_SESSION_CHECK_URL = "https://developers.facebook.com/apps/"
 LOGIN_MARKERS = (
     "/accounts/login",
     "www.instagram.com/accounts/login",
+    "facebook.com/login",
+    "www.facebook.com/login",
+    "/login.php",
 )
 LOGIN_TEXT_MARKERS = (
     "telefone, nome de usuario ou email",
     "telefone, nome de usuário ou email",
     "entrar no instagram",
+    "entrar no facebook",
+    "email ou telefone",
     "log in to instagram",
+    "log in to facebook",
 )
 
 CONFIDENT_LOGGED_IN_MARKERS = (
@@ -45,6 +51,13 @@ CONFIDENT_LOGGED_IN_MARKERS = (
     "edit profile",
     "central de contas",
     "accounts center",
+    "meus apps",
+    "my apps",
+    "criar app",
+    "create app",
+    "baixar ou transferir informacoes",
+    "baixar ou transferir informações",
+    "download or transfer information",
 )
 SECURITY_MARKERS = (
     "checkpoint",
@@ -233,7 +246,7 @@ def validate_instagram_session(
     write_status(
         status_path,
         state="checking_session",
-        message="Validando sessao persistente no Instagram antes da Central de Contas.",
+        message="Validando sessao persistente da Meta antes da Central de Contas.",
     )
     driver.get(session_check_url)
     wait_loaded(driver)
@@ -255,7 +268,7 @@ def validate_instagram_session(
         write_status(
             status_path,
             state="session_unclear",
-            message="Nao consegui confirmar a sessao do Instagram com seguranca. Abra o navegador visivel uma vez e tente novamente.",
+            message="Nao consegui confirmar a sessao da Meta com seguranca. Abra o navegador visivel uma vez e tente novamente.",
             screenshot=shot,
             extra={"url": driver.current_url},
         )
@@ -343,7 +356,7 @@ def run(args: argparse.Namespace) -> int:
             write_status(
                 status_path,
                 state="session_ok",
-                message="Sessao do Instagram confirmada sem abrir a Central de Contas.",
+                message="Sessao da Meta confirmada sem abrir a Central de Contas.",
                 screenshot=shot,
                 extra={"url": driver.current_url},
             )
@@ -404,7 +417,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Solicita exportacao oficial do Instagram via Central de Contas.")
     parser.add_argument("--mode", choices=["check-session", "request-export"], default="check-session")
     parser.add_argument("--url", default=os.getenv("ACCOUNTS_CENTER_EXPORT_URL", ACCOUNTS_CENTER_URL))
-    parser.add_argument("--session-check-url", default=os.getenv("INSTAGRAM_SESSION_CHECK_URL", INSTAGRAM_SESSION_CHECK_URL))
+    parser.add_argument("--session-check-url", default=os.getenv("META_SESSION_CHECK_URL", os.getenv("INSTAGRAM_SESSION_CHECK_URL", META_SESSION_CHECK_URL)))
     parser.add_argument("--profile-label", default=os.getenv("ACCOUNTS_CENTER_PROFILE_LABEL"))
     parser.add_argument("--profile-dir", type=Path, default=env_path("SELENIUM_PROFILE_DIR", "data/selenium/meta_accounts_center_profile"))
     parser.add_argument("--audit-dir", type=Path, default=env_path("FOLLOW_AUDIT_DIR", "data/follow_audit"))

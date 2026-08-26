@@ -8,7 +8,7 @@ SCREEN_SIZE="${SELENIUM_LOGIN_SCREEN_SIZE:-1365x950x24}"
 PROJECT_DIR="/opt/instagram-stl-auto-dm"
 PROFILE_DIR="${SELENIUM_PROFILE_DIR:-data/selenium/meta_accounts_center_profile}"
 BROWSER_BINARY="${SELENIUM_BROWSER_BINARY:-/usr/bin/chromium}"
-SESSION_CHECK_URL="${INSTAGRAM_SESSION_CHECK_URL:-https://www.instagram.com/accounts/edit/}"
+SESSION_CHECK_URL="${META_SESSION_CHECK_URL:-${INSTAGRAM_SESSION_CHECK_URL:-https://developers.facebook.com/apps/}}"
 NOVNC_WEB_DIR="${NOVNC_WEB_DIR:-/usr/share/novnc}"
 
 if [[ "${PROFILE_DIR}" != /* ]]; then

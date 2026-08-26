@@ -262,8 +262,7 @@ Chromium no Raspberry. Ele e conservador:
 
 - nao salva cookies em JSON nem imprime sessao no log;
 - usa o proprio perfil local do Chromium em `data/selenium/...`;
-- antes de abrir a Central de Contas, valida a sessao em uma pagina comum do
-  Instagram;
+- antes de abrir a Central de Contas, valida a sessao em uma pagina da Meta;
 - para se encontrar login, 2FA, checkpoint ou verificacao de seguranca;
 - salva status em `data/follow_audit/selenium_status.json`;
 - baixa/importa ZIPs apenas pela pasta `data/follow_audit/inbox`.
@@ -275,7 +274,7 @@ Rodar apenas para checar se a sessao esta carregada:
 ```
 
 Esse modo nao entra na Central de Contas; ele so confirma se o perfil persistente
-do navegador ja esta autenticado no Instagram.
+do navegador ja esta autenticado na Meta.
 
 Solicitar a exportacao:
 
@@ -303,7 +302,8 @@ open_instagram_login_vnc.bat
 
 Ele inicia um Chromium no Raspberry usando o mesmo perfil persistente do
 Selenium e abre a tela pelo tunnel SSH em `http://127.0.0.1:6080`. Depois de
-logar e confirmar que a pagina de editar perfil abriu, pare o helper:
+logar no Facebook/Meta e confirmar que a pagina `Meus apps` abriu, pare o
+helper:
 
 ```bat
 stop_instagram_login_vnc.bat
