@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="520" viewBox="0 0 1120 520" role="img" aria-labelledby="title desc">
+  <title id="title">Instagram STL Auto DM architecture</title>
+  <desc id="desc">Architecture diagram showing Instagram comments, Meta webhooks, FastAPI validation, SQLite idempotency, private replies, polling fallback and Raspberry Pi monitoring.</desc>
+  <rect width="1120" height="520" rx="18" fill="#f8fafc"/>
+  <defs>
+    <style>
+      .box{fill:#ffffff;stroke:#cbd5e1;stroke-width:2}
+      .main{fill:#eef6ff;stroke:#2563eb}
+      .store{fill:#f8f5ff;stroke:#7c3aed}
+      .ops{fill:#f0fdf4;stroke:#16a34a}
+      .warn{fill:#fff7ed;stroke:#ea580c}
+      .t{font-family:Inter,Segoe UI,Arial,sans-serif;fill:#0f172a}
+      .h{font-size:22px;font-weight:800}
+      .p{font-size:16px}
+      .s{font-size:13px;fill:#475569}
+      .arrow{stroke:#334155;stroke-width:3;fill:none;marker-end:url(#arrow)}
+    </style>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#334155"/>
+    </marker>
+  </defs>
+  <text x="40" y="48" class="t h">Instagram STL Auto DM</text>
+  <text x="40" y="76" class="t s">Official API workflow for comments, private replies and Raspberry Pi operations</text>
+
+  <rect x="40" y="130" width="170" height="110" rx="12" class="box"/>
+  <text x="70" y="172" class="t p">Instagram post</text>
+  <text x="70" y="198" class="t s">User comments keyword</text>
+  <text x="70" y="220" class="t s">Example: STL</text>
+
+  <rect x="270" y="130" width="180" height="110" rx="12" class="box"/>
+  <text x="305" y="172" class="t p">Meta webhook</text>
+  <text x="305" y="198" class="t s">Comment event</text>
+  <text x="305" y="220" class="t s">Signed payload</text>
+
+  <rect x="510" y="110" width="220" height="150" rx="12" class="box main"/>
+  <text x="552" y="158" class="t p">FastAPI backend</text>
+  <text x="552" y="186" class="t s">Verify challenge</text>
+  <text x="552" y="208" class="t s">Validate signature</text>
+  <text x="552" y="230" class="t s">Filter media + keyword</text>
+
+  <rect x="790" y="130" width="250" height="110" rx="12" class="box"/>
+  <text x="830" y="172" class="t p">Private Reply API</text>
+  <text x="830" y="198" class="t s">Sends STL/download link</text>
+  <text x="830" y="220" class="t s">No browser automation</text>
+
+  <rect x="510" y="320" width="220" height="110" rx="12" class="box store"/>
+  <text x="558" y="362" class="t p">SQLite state</text>
+  <text x="558" y="388" class="t s">Processed comments</text>
+  <text x="558" y="410" class="t s">Idempotency guard</text>
+
+  <rect x="270" y="320" width="180" height="110" rx="12" class="box warn"/>
+  <text x="306" y="362" class="t p">Polling fallback</text>
+  <text x="306" y="388" class="t s">Used when webhooks</text>
+  <text x="306" y="410" class="t s">are delayed or blocked</text>
+
+  <rect x="790" y="320" width="250" height="110" rx="12" class="box ops"/>
+  <text x="834" y="362" class="t p">Raspberry dashboard</text>
+  <text x="834" y="388" class="t s">Health, logs, tunnel URL</text>
+  <text x="834" y="410" class="t s">Controlled systemd restart</text>
+
+  <path d="M210 185 H270" class="arrow"/>
+  <path d="M450 185 H510" class="arrow"/>
+  <path d="M730 185 H790" class="arrow"/>
+  <path d="M620 260 V320" class="arrow"/>
+  <path d="M450 375 H510" class="arrow"/>
+  <path d="M730 375 H790" class="arrow"/>
+  <path d="M620 320 C620 285 410 285 360 320" class="arrow"/>
+</svg>

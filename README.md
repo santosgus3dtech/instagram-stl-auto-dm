@@ -2,6 +2,8 @@
 
 Official-API Instagram automation for sending a private reply when someone comments a configured keyword, such as `STL`, on a selected post.
 
+![Architecture diagram](docs/images/architecture.svg)
+
 ## Portfolio Highlights
 
 - Integration with Meta Webhooks and Instagram Private Replies.
