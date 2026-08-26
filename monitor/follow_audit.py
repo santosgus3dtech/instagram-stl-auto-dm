@@ -238,6 +238,19 @@ def public_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
     return public
 
 
+def automation_status(data_dir: Path) -> dict[str, Any] | None:
+    path = data_dir / "selenium_status.json"
+    if not path.exists():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError:
+        return {
+            "state": "unknown",
+            "message": "Status da automacao Selenium esta ilegivel.",
+        }
+
+
 def source_key(path: Path) -> str:
     stat = path.stat()
     return f"{path.name}:{stat.st_size}:{int(stat.st_mtime)}"

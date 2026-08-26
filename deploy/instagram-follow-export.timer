@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Instagram personal follow export assistant daily
+
+[Timer]
+OnCalendar=*-*-* 05:35:00
+RandomizedDelaySec=20min
+Persistent=true
+Unit=instagram-follow-export.service
+
+[Install]
+WantedBy=timers.target

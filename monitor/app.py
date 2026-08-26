@@ -19,6 +19,7 @@ from fastapi.responses import HTMLResponse
 
 from monitor.follow_audit import (
     FollowAuditError,
+    automation_status,
     empty_snapshot,
     import_export_zip,
     import_latest_from_inbox,
@@ -341,11 +342,12 @@ def collect_status() -> dict[str, Any]:
 
 def _follow_audit_status() -> dict[str, Any]:
     try:
-        return import_latest_from_inbox(FOLLOW_AUDIT_DIR)
+        status = import_latest_from_inbox(FOLLOW_AUDIT_DIR)
     except FollowAuditError as exc:
         status = empty_snapshot()
         status["error"] = str(exc)
-        return status
+    status["automation"] = automation_status(FOLLOW_AUDIT_DIR)
+    return status
 
 
 @app.get("/api/status")
@@ -1195,6 +1197,9 @@ HTML = """<!doctype html>
         $("follow-meta").textContent = `Ultima importacao: ${date} · arquivo ${data.source_file || "--"}`;
       } else {
         $("follow-meta").textContent = data.error || data.message || "Envie o ZIP em JSON com Seguidores e seguindo.";
+      }
+      if (data.automation && data.automation.state) {
+        $("follow-meta").textContent += ` · Selenium: ${data.automation.state}`;
       }
     }
 

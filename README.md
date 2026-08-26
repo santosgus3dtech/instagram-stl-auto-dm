@@ -250,9 +250,45 @@ O Raspberry extrai o ZIP, salva um historico local e mostra:
 Tambem e possivel copiar ZIPs para `data/follow_audit/inbox`; o painel importa
 automaticamente o arquivo ZIP mais recente dessa pasta.
 
-Este projeto nao usa Selenium para entrar no Instagram pessoal, armazenar senha
-ou raspar telas. A parte automatizada comeca no ZIP oficial gerado pela Central
-de Contas.
+Por padrao, este projeto nao usa Selenium para entrar no Instagram pessoal,
+armazenar senha ou raspar telas. A parte principal automatizada comeca no ZIP
+oficial gerado pela Central de Contas.
+
+### Assistente Selenium opcional
+
+Existe tambem um assistente Selenium em `tools/accounts_center_export.py` para
+solicitar a exportacao pela Central de Contas usando um perfil persistente do
+Chromium no Raspberry. Ele e conservador:
+
+- nao salva cookies em JSON nem imprime sessao no log;
+- usa o proprio perfil local do Chromium em `data/selenium/...`;
+- para se encontrar login, 2FA, checkpoint ou verificacao de seguranca;
+- salva status em `data/follow_audit/selenium_status.json`;
+- baixa/importa ZIPs apenas pela pasta `data/follow_audit/inbox`.
+
+Rodar apenas para checar se a sessao esta carregada:
+
+```bash
+.venv/bin/python tools/accounts_center_export.py --mode check-session --headless
+```
+
+Solicitar a exportacao:
+
+```bash
+.venv/bin/python tools/accounts_center_export.py --mode request-export --headless
+```
+
+Timer diario opcional:
+
+```bash
+sudo cp /opt/instagram-stl-auto-dm/deploy/instagram-follow-export.service /etc/systemd/system/
+sudo cp /opt/instagram-stl-auto-dm/deploy/instagram-follow-export.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now instagram-follow-export.timer
+```
+
+Se a Meta pedir login/verificacao, faca a acao manualmente numa sessao visivel e
+rode de novo. O script nao tenta contornar validacoes.
 
 ## Reinicio automatico
 
