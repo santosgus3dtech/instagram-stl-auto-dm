@@ -10,7 +10,8 @@ Group=guusebumps
 WorkingDirectory=/opt/instagram-stl-auto-dm
 EnvironmentFile=-/opt/instagram-stl-auto-dm/.env
 ExecStart=/opt/instagram-stl-auto-dm/tools/start_instagram_login_vnc.sh
-TimeoutStopSec=15
+KillMode=process
+TimeoutStopSec=30
 
 [Install]
 WantedBy=multi-user.target
