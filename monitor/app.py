@@ -14,8 +14,16 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
+
+from monitor.follow_audit import (
+    FollowAuditError,
+    empty_snapshot,
+    import_export_zip,
+    import_latest_from_inbox,
+    save_upload,
+)
 
 
 APP_STARTED_AT = time.time()
@@ -25,6 +33,10 @@ INSTAGRAM_HEALTH_URL = os.getenv(
     "INSTAGRAM_HEALTH_URL",
     "http://127.0.0.1:8000/health",
 )
+FOLLOW_AUDIT_DIR = Path(os.getenv("FOLLOW_AUDIT_DIR", "data/follow_audit"))
+FOLLOW_AUDIT_MAX_UPLOAD_BYTES = int(
+    os.getenv("FOLLOW_AUDIT_MAX_UPLOAD_MB", "80")
+) * 1024 * 1024
 REDACTION_PATTERNS = (
     (
         re.compile(r"((?:hub\.verify_token|hub_verify_token|access_token)=)[^&\s\"]+"),
@@ -327,9 +339,39 @@ def collect_status() -> dict[str, Any]:
     }
 
 
+def _follow_audit_status() -> dict[str, Any]:
+    try:
+        return import_latest_from_inbox(FOLLOW_AUDIT_DIR)
+    except FollowAuditError as exc:
+        status = empty_snapshot()
+        status["error"] = str(exc)
+        return status
+
+
 @app.get("/api/status")
 async def api_status() -> dict[str, Any]:
     return collect_status()
+
+
+@app.get("/api/follow-audit")
+async def api_follow_audit() -> dict[str, Any]:
+    return _follow_audit_status()
+
+
+@app.post("/api/follow-audit/import")
+async def api_follow_audit_import(
+    request: Request,
+    filename: str = "instagram-export.zip",
+) -> dict[str, Any]:
+    body = await request.body()
+    if len(body) > FOLLOW_AUDIT_MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="Arquivo maior que o limite configurado.")
+
+    try:
+        saved_path = save_upload(FOLLOW_AUDIT_DIR, filename, body)
+        return import_export_zip(FOLLOW_AUDIT_DIR, saved_path)
+    except FollowAuditError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 @app.get("/api/logs/{service_name}")
@@ -728,6 +770,82 @@ HTML = """<!doctype html>
       align-items: center;
     }
 
+    .audit-panel {
+      display: grid;
+      gap: 14px;
+    }
+
+    .audit-upload {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: linear-gradient(180deg, rgba(240, 245, 232, 0.8), rgba(255, 253, 248, 0.95));
+    }
+
+    input[type="file"] {
+      min-width: 0;
+      width: 100%;
+      color: var(--ink);
+      font-size: 13px;
+    }
+
+    .audit-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .audit-card,
+    .audit-list {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 253, 248, 0.96);
+    }
+
+    .audit-card {
+      min-height: 96px;
+      padding: 14px;
+    }
+
+    .audit-lists {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .audit-list {
+      min-height: 210px;
+      padding: 14px;
+    }
+
+    .audit-list h3 {
+      margin: 0 0 10px;
+      font-size: 15px;
+    }
+
+    .audit-list ul {
+      display: grid;
+      gap: 6px;
+      max-height: 190px;
+      margin: 0;
+      padding: 0;
+      overflow: auto;
+      list-style: none;
+    }
+
+    .audit-list li {
+      padding: 6px 8px;
+      border-radius: 6px;
+      background: rgba(246, 232, 211, 0.58);
+      font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+      font-size: 12px;
+      overflow-wrap: anywhere;
+    }
+
     code {
       display: block;
       min-height: 48px;
@@ -846,8 +964,13 @@ HTML = """<!doctype html>
       }
 
       .grid,
-      .services {
+      .services,
+      .audit-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .audit-lists {
+        grid-template-columns: 1fr;
       }
 
       .toolbar,
@@ -868,12 +991,14 @@ HTML = """<!doctype html>
       }
 
       .grid,
-      .services {
+      .services,
+      .audit-grid {
         grid-template-columns: 1fr;
       }
 
       .service-row,
-      .webhook-box {
+      .webhook-box,
+      .audit-upload {
         grid-template-columns: 1fr;
       }
 
@@ -947,6 +1072,42 @@ HTML = """<!doctype html>
 
     <section class="section">
       <div class="section-head">
+        <h2>Instagram pessoal</h2>
+        <div class="button-row">
+          <a class="btn" id="follow-link" href="https://accountscenter.instagram.com/info_and_permissions/dyi/" target="_blank" rel="noopener">Abrir Central de Contas</a>
+        </div>
+      </div>
+      <div class="audit-panel">
+        <div class="audit-upload">
+          <input id="follow-audit-file" type="file" accept=".zip,application/zip">
+          <button class="btn primary" id="follow-upload" type="button">Importar ZIP</button>
+        </div>
+        <div class="hint" id="follow-meta">Envie o ZIP em JSON com Seguidores e seguindo.</div>
+        <div class="audit-grid" aria-label="Resumo de seguidores">
+          <div class="audit-card"><div class="label">Seguidores</div><div class="value" id="follow-followers">--</div></div>
+          <div class="audit-card"><div class="label">Seguindo</div><div class="value" id="follow-following">--</div></div>
+          <div class="audit-card"><div class="label">Nao seguem de volta</div><div class="value" id="follow-notback">--</div></div>
+          <div class="audit-card"><div class="label">So te seguem</div><div class="value" id="follow-fans">--</div></div>
+        </div>
+        <div class="audit-lists">
+          <div class="audit-list">
+            <h3>Nao seguem de volta</h3>
+            <ul id="follow-notback-list"></ul>
+          </div>
+          <div class="audit-list">
+            <h3>Novos seguidores</h3>
+            <ul id="follow-new-list"></ul>
+          </div>
+          <div class="audit-list">
+            <h3>Deixaram de seguir</h3>
+            <ul id="follow-lost-list"></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
         <h2>Console</h2>
         <div class="button-row">
           <button class="btn leaf" id="refresh-logs" type="button">Atualizar logs</button>
@@ -998,6 +1159,54 @@ HTML = """<!doctype html>
     function numberText(value) {
       const number = Number(value);
       return Number.isFinite(number) ? number.toLocaleString("pt-BR") : "--";
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+      }[char]));
+    }
+
+    function auditList(items, emptyText) {
+      if (!Array.isArray(items) || items.length === 0) {
+        return `<li>${escapeHtml(emptyText)}</li>`;
+      }
+      return items.slice(0, 80).map((item) => {
+        const username = typeof item === "string" ? item : item.username;
+        return `<li>@${escapeHtml(username)}</li>`;
+      }).join("");
+    }
+
+    function renderFollowAudit(data) {
+      $("follow-followers").textContent = numberText(data.followers_count);
+      $("follow-following").textContent = numberText(data.following_count);
+      $("follow-notback").textContent = numberText(data.not_following_back_count);
+      $("follow-fans").textContent = numberText(data.fans_count);
+      $("follow-notback-list").innerHTML = auditList(data.not_following_back, "Nada importado ainda.");
+      $("follow-new-list").innerHTML = auditList(data.new_followers, "Sem comparativo anterior.");
+      $("follow-lost-list").innerHTML = auditList(data.lost_followers, "Sem comparativo anterior.");
+
+      if (data.ready) {
+        const date = data.generated_at ? new Date(data.generated_at).toLocaleString() : "--";
+        $("follow-meta").textContent = `Ultima importacao: ${date} · arquivo ${data.source_file || "--"}`;
+      } else {
+        $("follow-meta").textContent = data.error || data.message || "Envie o ZIP em JSON com Seguidores e seguindo.";
+      }
+    }
+
+    async function refreshFollowAudit() {
+      try {
+        const response = await fetch("/api/follow-audit", { cache: "no-store" });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || `HTTP ${response.status}`);
+        renderFollowAudit(data);
+      } catch (error) {
+        $("follow-meta").textContent = `Falha ao carregar auditoria: ${error.message}`;
+      }
     }
 
     function serviceMarkup(service) {
@@ -1103,6 +1312,34 @@ HTML = """<!doctype html>
       }
     }
 
+    async function uploadFollowAudit() {
+      const input = $("follow-audit-file");
+      const file = input.files && input.files[0];
+      if (!file) {
+        showToast("Escolha o ZIP exportado pela Central de Contas");
+        return;
+      }
+
+      $("follow-upload").disabled = true;
+      $("follow-upload").textContent = "Importando";
+      try {
+        const response = await fetch(`/api/follow-audit/import?filename=${encodeURIComponent(file.name)}`, {
+          method: "POST",
+          headers: { "content-type": "application/zip" },
+          body: file,
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || `HTTP ${response.status}`);
+        renderFollowAudit(data);
+        showToast("Lista importada");
+      } catch (error) {
+        showToast(`Falha ao importar: ${error.message}`);
+      } finally {
+        $("follow-upload").disabled = false;
+        $("follow-upload").textContent = "Importar ZIP";
+      }
+    }
+
     document.addEventListener("click", (event) => {
       const logButton = event.target.closest("[data-log-service]");
       if (logButton) {
@@ -1118,6 +1355,7 @@ HTML = """<!doctype html>
 
     $("refresh-btn").addEventListener("click", refresh);
     $("refresh-logs").addEventListener("click", () => loadLogs(selectedLogService));
+    $("follow-upload").addEventListener("click", uploadFollowAudit);
     $("copy-webhook").addEventListener("click", async () => {
       const value = $("webhook").textContent.trim();
       try {
@@ -1129,7 +1367,9 @@ HTML = """<!doctype html>
     });
 
     refresh().then(() => loadLogs(selectedLogService));
+    refreshFollowAudit();
     setInterval(refresh, 5000);
+    setInterval(refreshFollowAudit, 30000);
     setInterval(() => loadLogs(selectedLogService), 10000);
   </script>
 </body>

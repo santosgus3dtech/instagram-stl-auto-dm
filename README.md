@@ -228,6 +228,32 @@ Reiniciar `instagram-stl-auto-dm` mantem o tunnel ativo. Reiniciar
 `instagram-stl-auto-dm-tunnel` pode gerar uma nova URL `trycloudflare.com`, que
 tambem precisa ser atualizada no painel da Meta.
 
+## Auditoria de seguidores do Instagram pessoal
+
+O painel tambem tem uma area `Instagram pessoal` para comparar a lista oficial
+de seguidores/seguindo exportada pela Central de Contas da Meta.
+
+O fluxo seguro e:
+
+1. Abra `https://accountscenter.instagram.com/info_and_permissions/dyi/`.
+2. Exporte `Seguidores e seguindo` em formato `JSON`.
+3. Baixe o ZIP gerado pela Meta.
+4. No painel `http://192.168.0.105:8080`, envie o ZIP em `Instagram pessoal`.
+
+O Raspberry extrai o ZIP, salva um historico local e mostra:
+
+- quem voce segue e nao segue de volta;
+- quem te segue e voce nao segue;
+- novos seguidores desde a ultima importacao;
+- quem deixou de te seguir desde a ultima importacao.
+
+Tambem e possivel copiar ZIPs para `data/follow_audit/inbox`; o painel importa
+automaticamente o arquivo ZIP mais recente dessa pasta.
+
+Este projeto nao usa Selenium para entrar no Instagram pessoal, armazenar senha
+ou raspar telas. A parte automatizada comeca no ZIP oficial gerado pela Central
+de Contas.
+
 ## Reinicio automatico
 
 Para reduzir risco de travamento ao longo dos dias, ha um timer opcional que

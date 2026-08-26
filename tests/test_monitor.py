@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 import subprocess
+import zipfile
 
 from fastapi.testclient import TestClient
 
@@ -76,3 +78,42 @@ def test_service_logs_redacts_tokens(monkeypatch):
     assert "abc123" not in joined
     assert "IGAAabcdef" not in joined
     assert "hub.verify_token=<redacted>" in joined
+
+
+def test_follow_audit_import_endpoint(monkeypatch, tmp_path):
+    def entry(username: str) -> dict:
+        return {
+            "string_list_data": [
+                {
+                    "href": f"https://www.instagram.com/{username}",
+                    "value": username,
+                    "timestamp": 1710000000,
+                }
+            ]
+        }
+
+    export_path = tmp_path / "export.zip"
+    with zipfile.ZipFile(export_path, "w") as archive:
+        archive.writestr(
+            "followers_and_following/followers_1.json",
+            json.dumps([entry("alice")]),
+        )
+        archive.writestr(
+            "followers_and_following/following.json",
+            json.dumps({"relationships_following": [entry("alice"), entry("bruno")]}),
+        )
+
+    monkeypatch.setattr(monitor_app, "FOLLOW_AUDIT_DIR", tmp_path / "audit")
+    client = TestClient(monitor_app.app)
+
+    response = client.post(
+        "/api/follow-audit/import?filename=export.zip",
+        content=export_path.read_bytes(),
+        headers={"content-type": "application/zip"},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["followers_count"] == 1
+    assert payload["following_count"] == 2
+    assert payload["not_following_back"] == [{"username": "bruno"}]
