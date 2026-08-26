@@ -295,6 +295,20 @@ sudo systemctl enable --now instagram-follow-export.timer
 Se a Meta pedir login/verificacao, faca a acao manualmente numa sessao visivel e
 rode de novo. O script nao tenta contornar validacoes.
 
+Para criar essa sessao uma unica vez no Raspberry, use o helper no Windows:
+
+```bat
+open_instagram_login_vnc.bat
+```
+
+Ele inicia um Chromium no Raspberry usando o mesmo perfil persistente do
+Selenium e abre a tela pelo tunnel SSH em `http://127.0.0.1:6080`. Depois de
+logar e confirmar que a pagina de editar perfil abriu, pare o helper:
+
+```bat
+stop_instagram_login_vnc.bat
+```
+
 ## Reinicio automatico
 
 Para reduzir risco de travamento ao longo dos dias, ha um timer opcional que

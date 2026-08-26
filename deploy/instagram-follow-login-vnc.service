@@ -1,0 +1,16 @@
+[Unit]
+Description=One-time Instagram login browser over SSH-only noVNC
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=guusebumps
+Group=guusebumps
+WorkingDirectory=/opt/instagram-stl-auto-dm
+EnvironmentFile=-/opt/instagram-stl-auto-dm/.env
+ExecStart=/opt/instagram-stl-auto-dm/tools/start_instagram_login_vnc.sh
+TimeoutStopSec=15
+
+[Install]
+WantedBy=multi-user.target
