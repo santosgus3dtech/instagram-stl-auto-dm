@@ -4,4 +4,3 @@ requests
 python-dotenv
 pytest
 httpx
-selenium
