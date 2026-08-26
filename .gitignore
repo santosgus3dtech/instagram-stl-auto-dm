@@ -9,4 +9,6 @@ data/*.sqlite
 data/*.sqlite3
 *.log
 Instagram_STL_AutoDM_Conversa_Codex.md
+.pytest_tmp/
+outputs/
 
