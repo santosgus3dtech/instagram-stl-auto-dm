@@ -262,6 +262,8 @@ Chromium no Raspberry. Ele e conservador:
 
 - nao salva cookies em JSON nem imprime sessao no log;
 - usa o proprio perfil local do Chromium em `data/selenium/...`;
+- antes de abrir a Central de Contas, valida a sessao em uma pagina comum do
+  Instagram;
 - para se encontrar login, 2FA, checkpoint ou verificacao de seguranca;
 - salva status em `data/follow_audit/selenium_status.json`;
 - baixa/importa ZIPs apenas pela pasta `data/follow_audit/inbox`.
@@ -271,6 +273,9 @@ Rodar apenas para checar se a sessao esta carregada:
 ```bash
 .venv/bin/python tools/accounts_center_export.py --mode check-session --headless
 ```
+
+Esse modo nao entra na Central de Contas; ele so confirma se o perfil persistente
+do navegador ja esta autenticado no Instagram.
 
 Solicitar a exportacao:
 

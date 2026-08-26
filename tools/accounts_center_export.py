@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import random
 import sys
 import time
 from datetime import datetime, timezone
@@ -23,21 +24,42 @@ from monitor.follow_audit import FollowAuditError, import_latest_from_inbox
 
 
 ACCOUNTS_CENTER_URL = "https://accountscenter.instagram.com/info_and_permissions/dyi/"
+INSTAGRAM_SESSION_CHECK_URL = "https://www.instagram.com/accounts/edit/"
 LOGIN_MARKERS = (
-    "login",
     "/accounts/login",
-    "entrar",
-    "log in",
+    "www.instagram.com/accounts/login",
+)
+LOGIN_TEXT_MARKERS = (
+    "telefone, nome de usuario ou email",
+    "telefone, nome de usuário ou email",
+    "entrar no instagram",
+    "log in to instagram",
+)
+
+CONFIDENT_LOGGED_IN_MARKERS = (
+    "editar perfil",
+    "edit profile",
+    "central de contas",
+    "accounts center",
 )
 SECURITY_MARKERS = (
     "checkpoint",
     "two-factor",
     "two_factor",
-    "security",
-    "verificacao",
-    "verificação",
-    "confirm",
-    "confirme",
+    "/challenge/",
+    "/accounts/suspended/",
+)
+SECURITY_TEXT_MARKERS = (
+    "verifique sua identidade",
+    "verificacao de seguranca",
+    "verificação de segurança",
+    "codigo de seguranca",
+    "código de segurança",
+    "confirme que e voce",
+    "confirme que é você",
+    "confirm it's you",
+    "security code",
+    "two-factor authentication",
 )
 
 
@@ -122,9 +144,9 @@ def normalized_page_text(driver: WebDriver) -> str:
 def detect_blocking_state(driver: WebDriver) -> str | None:
     url = (driver.current_url or "").casefold()
     text = normalized_page_text(driver)
-    if any(marker in url or marker in text for marker in LOGIN_MARKERS):
+    if any(marker in url for marker in LOGIN_MARKERS) or any(marker in text for marker in LOGIN_TEXT_MARKERS):
         return "login_required"
-    if any(marker in url or marker in text for marker in SECURITY_MARKERS):
+    if any(marker in url for marker in SECURITY_MARKERS) or any(marker in text for marker in SECURITY_TEXT_MARKERS):
         return "security_check_required"
     return None
 
@@ -171,11 +193,11 @@ def click_any(
         element = find_by_text(driver, labels)
         if element is not None:
             driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", element)
-            time.sleep(0.4)
+            human_pause(0.4, 0.9)
             driver.execute_script("arguments[0].click();", element)
-            time.sleep(1.2)
+            human_pause(1.1, 2.3)
             return True
-        time.sleep(0.5)
+        human_pause(0.45, 0.9)
     if required:
         raise AccountsCenterExportError(f"Nao encontrei na tela: {', '.join(labels)}")
     return False
@@ -185,7 +207,57 @@ def wait_loaded(driver: WebDriver, timeout_seconds: float = 30) -> None:
     WebDriverWait(driver, timeout_seconds).until(
         lambda item: item.execute_script("return document.readyState") == "complete"
     )
-    time.sleep(2)
+    human_pause(1.8, 3.2)
+
+
+def human_pause(min_seconds: float, max_seconds: float) -> None:
+    time.sleep(random.uniform(min_seconds, max_seconds))
+
+
+def session_has_loaded(driver: WebDriver) -> bool:
+    text = normalized_page_text(driver)
+    return any(marker in text for marker in CONFIDENT_LOGGED_IN_MARKERS)
+
+
+def validate_instagram_session(
+    driver: WebDriver,
+    *,
+    session_check_url: str,
+    status_path: Path,
+    screenshot_dir: Path,
+) -> bool:
+    write_status(
+        status_path,
+        state="checking_session",
+        message="Validando sessao persistente no Instagram antes da Central de Contas.",
+    )
+    driver.get(session_check_url)
+    wait_loaded(driver)
+
+    blocking_state = detect_blocking_state(driver)
+    if blocking_state:
+        shot = screenshot(driver, screenshot_dir, blocking_state)
+        write_status(
+            status_path,
+            state=blocking_state,
+            message="Precisa de acao manual no navegador antes de automatizar.",
+            screenshot=shot,
+            extra={"url": driver.current_url},
+        )
+        return False
+
+    if not session_has_loaded(driver):
+        shot = screenshot(driver, screenshot_dir, "session-unclear")
+        write_status(
+            status_path,
+            state="session_unclear",
+            message="Nao consegui confirmar a sessao do Instagram com seguranca. Abra o navegador visivel uma vez e tente novamente.",
+            screenshot=shot,
+            extra={"url": driver.current_url},
+        )
+        return False
+
+    return True
 
 
 def choose_profile(driver: WebDriver, profile_label: str | None) -> None:
@@ -243,7 +315,7 @@ def run(args: argparse.Namespace) -> int:
     data_dir = args.audit_dir
     status_path = data_dir / "selenium_status.json"
     screenshot_dir = data_dir / "screenshots"
-    write_status(status_path, state="running", message="Abrindo Central de Contas.")
+    write_status(status_path, state="starting", message="Iniciando navegador com perfil persistente.")
 
     driver: WebDriver | None = None
     try:
@@ -254,6 +326,26 @@ def run(args: argparse.Namespace) -> int:
             browser_binary=args.browser_binary,
             driver_path=args.driver_path,
         )
+        if not validate_instagram_session(
+            driver,
+            session_check_url=args.session_check_url,
+            status_path=status_path,
+            screenshot_dir=screenshot_dir,
+        ):
+            return 2
+
+        if args.mode == "check-session":
+            shot = screenshot(driver, screenshot_dir, "session-ok")
+            write_status(
+                status_path,
+                state="session_ok",
+                message="Sessao do Instagram confirmada sem abrir a Central de Contas.",
+                screenshot=shot,
+                extra={"url": driver.current_url},
+            )
+            return 0
+
+        write_status(status_path, state="running", message="Abrindo Central de Contas.")
         driver.get(args.url)
         wait_loaded(driver)
 
@@ -268,17 +360,6 @@ def run(args: argparse.Namespace) -> int:
                 extra={"url": driver.current_url},
             )
             return 2
-
-        if args.mode == "check-session":
-            shot = screenshot(driver, screenshot_dir, "session-ok")
-            write_status(
-                status_path,
-                state="session_ok",
-                message="Sessao carregada sem tela de login aparente.",
-                screenshot=shot,
-                extra={"url": driver.current_url},
-            )
-            return 0
 
         request_follow_export(driver, profile_label=args.profile_label)
         shot = screenshot(driver, screenshot_dir, "request-submitted")
@@ -319,6 +400,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Solicita exportacao oficial do Instagram via Central de Contas.")
     parser.add_argument("--mode", choices=["check-session", "request-export"], default="check-session")
     parser.add_argument("--url", default=os.getenv("ACCOUNTS_CENTER_EXPORT_URL", ACCOUNTS_CENTER_URL))
+    parser.add_argument("--session-check-url", default=os.getenv("INSTAGRAM_SESSION_CHECK_URL", INSTAGRAM_SESSION_CHECK_URL))
     parser.add_argument("--profile-label", default=os.getenv("ACCOUNTS_CENTER_PROFILE_LABEL"))
     parser.add_argument("--profile-dir", type=Path, default=env_path("SELENIUM_PROFILE_DIR", "data/selenium/meta_accounts_center_profile"))
     parser.add_argument("--audit-dir", type=Path, default=env_path("FOLLOW_AUDIT_DIR", "data/follow_audit"))
