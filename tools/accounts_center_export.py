@@ -34,6 +34,8 @@ LOGIN_MARKERS = (
     "www.instagram.com/accounts/login",
     "facebook.com/login",
     "www.facebook.com/login",
+    "business.facebook.com/business/loginpage",
+    "/business/loginpage",
     "/login.php",
 )
 LOGIN_TEXT_MARKERS = (
