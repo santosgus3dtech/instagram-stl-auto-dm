@@ -1,39 +1,37 @@
 # Instagram STL Auto DM
 
-Automacao oficial para enviar uma mensagem privada no Instagram quando alguem
-comentar uma palavra-chave, como `STL`, em um post configurado.
+Official-API Instagram automation for sending a private reply when someone comments a configured keyword, such as `STL`, on a selected post.
 
-## Destaques para portfolio
+## Portfolio Highlights
 
-- Integracao com Webhooks e Private Replies da Meta.
-- Validacao de assinatura `X-Hub-Signature-256`.
-- Idempotencia com SQLite para evitar respostas duplicadas.
-- Fallback por polling quando webhooks nao chegam em tempo real.
-- Deploy em Raspberry Pi com `systemd`.
-- Painel separado de monitoramento dos servicos.
-- Testes com payloads falsos, sem chamar a API real.
+- Integration with Meta Webhooks and Instagram Private Replies.
+- `X-Hub-Signature-256` signature validation.
+- SQLite idempotency to avoid duplicate replies.
+- Polling fallback when webhooks do not arrive in real time.
+- Raspberry Pi deployment with `systemd`.
+- Separate service monitoring dashboard.
+- Tests with fake payloads, without calling the real API.
 
-Veja tambem: [`docs/portfolio-case-study.md`](docs/portfolio-case-study.md).
+See also: [`docs/portfolio-case-study.md`](docs/portfolio-case-study.md).
 
-O projeto usa Python, FastAPI, Webhooks da Meta, SQLite e Private Replies da API
-oficial. A proposta e evitar automacao de interface, scraping ou Selenium.
-Quando a Meta nao entrega webhooks em tempo real por causa de revisao/acesso, o
-backend tambem pode consultar comentarios periodicamente como fallback.
+The project uses Python, FastAPI, Meta Webhooks, SQLite and Instagram Private Replies. The goal is to avoid browser automation, scraping and Selenium for a workflow that needs to be reliable on a Raspberry Pi.
 
-## Estado atual
+When Meta webhooks are not delivered in real time because of app review or access limitations, the backend can also poll comments as a fallback.
 
-MVP iniciado com:
+## Current State
 
-- endpoint `GET /webhook` para verificacao da Meta;
-- endpoint `POST /webhook` para receber eventos de comentarios;
-- validacao de assinatura `X-Hub-Signature-256`;
-- filtro por `media_id` e palavra-chave;
-- envio de Private Reply via endpoint de mensagens configuravel;
-- idempotencia com SQLite para nao responder o mesmo comentario duas vezes;
-- fallback opcional por polling de comentarios;
-- testes com payloads falsos, sem chamar a API real.
+MVP with:
 
-## Estrutura
+- `GET /webhook` endpoint for Meta verification.
+- `POST /webhook` endpoint for comment events.
+- `X-Hub-Signature-256` signature validation.
+- Filtering by `media_id` and keyword.
+- Private Reply sending through a configurable messaging endpoint.
+- SQLite idempotency so the same comment is not answered twice.
+- Optional comment polling fallback.
+- Tests using fake payloads, without calling the real Meta API.
+
+## Structure
 
 ```text
 app/
@@ -53,7 +51,7 @@ requirements.txt
 run.py
 ```
 
-## Instalar
+## Install
 
 ```bash
 python -m venv .venv
@@ -61,7 +59,7 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-No Linux/Raspberry Pi:
+On Linux/Raspberry Pi:
 
 ```bash
 python3 -m venv .venv
@@ -69,28 +67,28 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Configurar
+## Configure
 
-Crie um `.env` baseado em `.env.example`.
+Create a `.env` file based on `.env.example`.
 
 ```env
-VERIFY_TOKEN=um_token_que_voce_inventar
-META_APP_SECRET=seu_app_secret_da_meta
-IG_ACCESS_TOKEN=seu_access_token
-IG_USER_ID=seu_instagram_user_id
-TARGET_MEDIA_ID=id_do_post
+VERIFY_TOKEN=a_token_you_choose
+META_APP_SECRET=your_meta_app_secret
+IG_ACCESS_TOKEN=your_access_token
+IG_USER_ID=your_instagram_user_id
+TARGET_MEDIA_ID=target_post_id
 STL_KEYWORD=STL
-STL_LINK=https://example.com/download/modelo.stl
+STL_LINK=https://example.com/download/model.stl
 GRAPH_VERSION=v26.0
 ```
 
-Para varias automacoes, use `AUTOMATIONS_JSON`:
+For multiple automations, use `AUTOMATIONS_JSON`:
 
 ```env
-AUTOMATIONS_JSON=[{"media_id":"180...","keyword":"STL","link":"https://example.com/modelo.stl"}]
+AUTOMATIONS_JSON=[{"media_id":"180...","keyword":"STL","link":"https://example.com/model.stl"}]
 ```
 
-Se os webhooks da Meta nao chegarem, habilite o polling:
+If Meta webhooks are not arriving, enable comment polling:
 
 ```env
 COMMENT_POLLING_ENABLED=true
@@ -98,48 +96,45 @@ COMMENT_POLLING_INTERVAL_SECONDS=30
 COMMENT_POLLING_LIMIT=25
 ```
 
-## Rodar localmente
+## Run Locally
 
 ```bash
 python run.py
 ```
 
-Ou:
+Or:
 
 ```bash
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-URL local:
+Local URL:
 
 ```text
 http://localhost:8000
 ```
 
-Para a Meta chamar seu webhook em desenvolvimento, exponha a porta com uma URL
-HTTPS, por exemplo com ngrok ou Cloudflare Tunnel:
+For Meta to call the webhook during development, expose the port through an HTTPS URL, for example with ngrok or Cloudflare Tunnel:
 
 ```text
-https://seu-dominio-ou-tunnel/webhook
+https://your-domain-or-tunnel/webhook
 ```
 
-## Rodar no Raspberry Pi
+## Run On Raspberry Pi
 
-O Raspberry deve manter o backend ligado 24h. Use um servico `systemd` para
-iniciar junto com o sistema e reiniciar se cair.
+The Raspberry Pi is intended to keep the backend running 24/7. Use a `systemd` service so it starts with the system and restarts if it crashes.
 
-1. Copie ou clone este projeto no Raspberry:
+1. Clone or copy this project to the Raspberry Pi:
 
 ```bash
 sudo mkdir -p /opt/instagram-stl-auto-dm
 sudo chown -R pi:pi /opt/instagram-stl-auto-dm
-git clone <url-do-seu-repositorio> /opt/instagram-stl-auto-dm
+git clone <your-repository-url> /opt/instagram-stl-auto-dm
 ```
 
-Se voce ainda nao subiu para um repositorio remoto, copie a pasta por SSH/SCP
-e mantenha o `.env` fora do Git.
+Keep `.env` outside Git.
 
-2. Rode o setup:
+2. Run the setup script:
 
 ```bash
 cd /opt/instagram-stl-auto-dm
@@ -147,61 +142,55 @@ chmod +x deploy/raspberry-setup.sh
 sudo ./deploy/raspberry-setup.sh
 ```
 
-3. Edite o `.env` no Raspberry com os valores reais:
+3. Edit `.env` on the Raspberry Pi with real values:
 
 ```bash
 nano /opt/instagram-stl-auto-dm/.env
 ```
 
-4. Inicie/reinicie o servico:
+4. Start or restart the service:
 
 ```bash
 sudo systemctl restart instagram-stl-auto-dm
 sudo systemctl status instagram-stl-auto-dm --no-pager
 ```
 
-5. Teste no proprio Raspberry:
+5. Test locally on the Raspberry Pi:
 
 ```bash
 curl http://127.0.0.1:8000/health
 ```
 
-6. Crie uma URL HTTPS publica apontando para `127.0.0.1:8000` e use no painel
-da Meta:
+6. Create a public HTTPS URL pointing to `127.0.0.1:8000` and use it in the Meta dashboard:
 
 ```text
-https://sua-url-publica/webhook
+https://your-public-url/webhook
 ```
 
-Para uso real, prefira uma URL fixa. Cloudflare Tunnel com dominio proprio,
-ngrok com dominio reservado, Nginx com HTTPS ou uma VPS evitam trocar a URL de
-callback toda vez que o tunel reiniciar.
+For real use, prefer a stable URL. Cloudflare Tunnel with a custom domain, reserved ngrok domains, Nginx with HTTPS or a VPS avoid changing the callback URL every time the tunnel restarts.
 
-Para um teste rapido sem dominio proprio, instale `cloudflared` e rode um
-quick tunnel apontando para o servico local:
+For quick tests without a custom domain, install `cloudflared` and run a quick tunnel pointing to the local service:
 
 ```bash
 sudo systemctl status instagram-stl-auto-dm-tunnel --no-pager
 journalctl -u instagram-stl-auto-dm-tunnel --no-pager -n 120 | grep -Eo 'https://[-a-zA-Z0-9.]+\.trycloudflare\.com' | tail -n 1
 ```
 
-Use a URL retornada com `/webhook` no painel da Meta. Esse tipo de tunel e bom
-para teste, mas a URL pode mudar quando o servico reinicia.
+Use the returned URL with `/webhook` in the Meta dashboard. This tunnel type is good for testing, but the URL can change when the service restarts.
 
-## Painel de status
+## Status Dashboard
 
-O projeto tambem inclui um painel separado para monitorar o Raspberry e os
-servicos da automacao. Ele roda na porta `8080` e mostra:
+The project also includes a separate dashboard for monitoring the Raspberry Pi and the automation services. It runs on port `8080` and shows:
 
-- se o Raspberry esta online;
-- uptime, memoria, disco e temperatura;
-- se `instagram-stl-auto-dm` esta ativo;
-- se o tunnel publico esta ativo;
-- URL publica atual do webhook, quando encontrada nos logs;
-- console com logs do `systemd`;
-- botao para reiniciar o backend e o tunnel.
+- Raspberry Pi online state.
+- Uptime, memory, disk and temperature.
+- Whether `instagram-stl-auto-dm` is active.
+- Whether the public tunnel is active.
+- Current public webhook URL, when found in logs.
+- `systemd` logs.
+- Buttons to restart the backend and tunnel services.
 
-No Raspberry:
+On the Raspberry Pi:
 
 ```bash
 sudo cp /opt/instagram-stl-auto-dm/deploy/raspberry-status.service /etc/systemd/system/raspberry-status.service
@@ -210,13 +199,13 @@ sudo systemctl enable raspberry-status
 sudo systemctl restart raspberry-status
 ```
 
-Abra na rede local:
+Open on the local network:
 
 ```text
 http://192.168.0.105:8080
 ```
 
-JSON direto:
+Direct JSON:
 
 ```text
 http://192.168.0.105:8080/api/status
@@ -229,25 +218,20 @@ http://192.168.0.105:8080/api/logs/instagram-stl-auto-dm
 http://192.168.0.105:8080/api/logs/instagram-stl-auto-dm-tunnel
 ```
 
-Os botoes de restart do painel chamam estes endpoints:
+The dashboard restart buttons call:
 
 ```text
 POST /api/services/instagram-stl-auto-dm/restart
 POST /api/services/instagram-stl-auto-dm-tunnel/restart
 ```
 
-Reiniciar `instagram-stl-auto-dm` mantem o tunnel ativo. Reiniciar
-`instagram-stl-auto-dm-tunnel` pode gerar uma nova URL `trycloudflare.com`, que
-tambem precisa ser atualizada no painel da Meta.
+Restarting `instagram-stl-auto-dm` keeps the tunnel active. Restarting `instagram-stl-auto-dm-tunnel` can generate a new `trycloudflare.com` URL, which must also be updated in the Meta dashboard.
 
-## Reinicio automatico
+## Automatic Restart
 
-Para reduzir risco de travamento ao longo dos dias, ha um timer opcional que
-reinicia apenas o backend `instagram-stl-auto-dm` diariamente de madrugada. Ele
-nao reinicia o Raspberry inteiro e nao reinicia o tunnel, entao a URL publica
-continua a mesma.
+To reduce the risk of long-running service issues, the project includes an optional timer that restarts only the `instagram-stl-auto-dm` backend every day before morning traffic. It does not restart the whole Raspberry Pi and it does not restart the tunnel, so the public URL stays the same.
 
-Instalar/ativar no Raspberry:
+Install and enable it on the Raspberry Pi:
 
 ```bash
 sudo cp /opt/instagram-stl-auto-dm/deploy/instagram-stl-auto-dm-restart.service /etc/systemd/system/
@@ -257,34 +241,31 @@ sudo systemctl enable --now instagram-stl-auto-dm-restart.timer
 systemctl list-timers instagram-stl-auto-dm-restart.timer
 ```
 
-Por padrao ele roda todos os dias as `04:10`, com ate 10 minutos de atraso
-aleatorio.
+By default it runs every day at `04:10`, with up to 10 minutes of randomized delay.
 
-## Testar
+## Test
 
 ```bash
 pytest
 ```
 
-## Fontes oficiais a acompanhar
+## Official Sources To Track
 
-Confirmado em 2026-08-16 nas documentacoes oficiais da Meta:
+Confirmed against Meta's official documentation on 2026-08-16:
 
-- [Private Replies para Instagram](https://developers.facebook.com/documentation/instagram-platform/private-replies)
-- [Private Replies em Instagram Messaging](https://developers.facebook.com/documentation/business-messaging/instagram-messaging/features/private-replies)
-- [Webhooks da Graph API](https://developers.facebook.com/docs/graph-api/webhooks/getting-started/)
-- [Webhooks para Instagram](https://developers.facebook.com/docs/graph-api/webhooks/getting-started/webhooks-for-instagram/)
+- [Instagram Private Replies](https://developers.facebook.com/documentation/instagram-platform/private-replies)
+- [Private Replies in Instagram Messaging](https://developers.facebook.com/documentation/business-messaging/instagram-messaging/features/private-replies)
+- [Graph API Webhooks](https://developers.facebook.com/docs/graph-api/webhooks/getting-started/)
+- [Instagram Webhooks](https://developers.facebook.com/docs/graph-api/webhooks/getting-started/webhooks-for-instagram/)
 - [Permissions Reference](https://developers.facebook.com/docs/permissions/)
 
-Antes de colocar em producao, revise no painel da Meta quais permissoes e
-recursos precisam de App Review/Advanced Access para a conta e o tipo de login
-escolhidos.
+Before production use, review the Meta dashboard to confirm which permissions and features require App Review or Advanced Access for the account and login type you choose.
 
-## Proximo passo
+## Next Steps
 
-1. Criar/configurar o app no Meta for Developers.
-2. Conectar uma conta Instagram Professional.
-3. Obter `IG_USER_ID`, `IG_ACCESS_TOKEN`, `APP_SECRET` e o `TARGET_MEDIA_ID`.
-4. Subir o backend com HTTPS publico.
-5. Registrar o webhook no painel da Meta e assinar eventos de comentarios.
-6. Fazer um teste real comentando `STL` no post configurado.
+1. Create and configure the app in Meta for Developers.
+2. Connect an Instagram Professional account.
+3. Get `IG_USER_ID`, `IG_ACCESS_TOKEN`, `APP_SECRET` and `TARGET_MEDIA_ID`.
+4. Deploy the backend behind a public HTTPS URL.
+5. Register the webhook in the Meta dashboard and subscribe to comment events.
+6. Test the real flow by commenting `STL` on the configured post.
