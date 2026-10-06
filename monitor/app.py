@@ -21,6 +21,7 @@ from fastapi.responses import HTMLResponse
 APP_STARTED_AT = time.time()
 DEFAULT_SERVICES = "instagram-stl-auto-dm,instagram-stl-auto-dm-tunnel"
 ACTIONABLE_SERVICES = {"instagram-stl-auto-dm", "instagram-stl-auto-dm-tunnel"}
+DEMO_MODE = os.getenv("MONITOR_DEMO_MODE", "").strip().lower() in {"1", "true", "yes", "on"}
 INSTAGRAM_HEALTH_URL = os.getenv(
     "INSTAGRAM_HEALTH_URL",
     "http://127.0.0.1:8000/health",
@@ -289,6 +290,8 @@ def _load_average() -> list[float] | None:
 
 
 def collect_status() -> dict[str, Any]:
+    if DEMO_MODE:
+        return _demo_status()
     service_names = _monitored_service_names()
     services = [_service_status(name) for name in service_names]
     instagram_health = _check_instagram_health()
@@ -322,6 +325,60 @@ def collect_status() -> dict[str, Any]:
         "tunnel": {
             "url": tunnel_url,
             "webhook_url": f"{tunnel_url}/webhook" if tunnel_url else None,
+        },
+        "services": services,
+    }
+
+
+def _demo_status() -> dict[str, Any]:
+    """Return a deterministic, non-operational portfolio snapshot."""
+
+    services = [
+        {
+            "name": "instagram-stl-auto-dm",
+            "active": True,
+            "active_state": "active",
+            "enabled_state": "enabled",
+            "sub_state": "running",
+            "main_pid": "1842",
+            "started_at": "2026-10-06 09:15:00 UTC",
+            "restarts": "0",
+        },
+        {
+            "name": "instagram-stl-auto-dm-tunnel",
+            "active": True,
+            "active_state": "active",
+            "enabled_state": "enabled",
+            "sub_state": "running",
+            "main_pid": "1851",
+            "started_at": "2026-10-06 09:15:02 UTC",
+            "restarts": "0",
+        },
+    ]
+    return {
+        "online": True,
+        "timestamp": "2026-10-06T12:00:00+00:00",
+        "hostname": "portfolio-pi",
+        "platform": "Raspberry Pi OS demo",
+        "uptime": {"seconds": 371520, "human": "4d 7h 12m"},
+        "load_average": [0.12, 0.18, 0.21],
+        "memory": {"total_mb": 4096, "available_mb": 2860, "used_percent": 30.2},
+        "disk": {"total_gb": 116.4, "free_gb": 82.7, "used_percent": 28.9},
+        "temperature_c": 47.8,
+        "monitor": {"started_at": "2026-10-02T04:48:00+00:00"},
+        "instagram": {
+            "running": True,
+            "health_url": "http://127.0.0.1:8000/health",
+            "health": {
+                "ok": True,
+                "status_code": 200,
+                "latency_ms": 18,
+                "payload": {"status": "ok", "mode": "synthetic"},
+            },
+        },
+        "tunnel": {
+            "url": "https://portfolio-demo.example.test",
+            "webhook_url": "https://portfolio-demo.example.test/webhook",
         },
         "services": services,
     }

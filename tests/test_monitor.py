@@ -77,3 +77,11 @@ def test_service_logs_redacts_tokens(monkeypatch):
     assert "IGAAabcdef" not in joined
     assert "hub.verify_token=<redacted>" in joined
 
+
+def test_demo_status_contains_only_synthetic_operational_values(monkeypatch):
+    monkeypatch.setattr(monitor_app, "DEMO_MODE", True)
+    payload = monitor_app.collect_status()
+    assert payload["hostname"] == "portfolio-pi"
+    assert payload["instagram"]["health"]["payload"]["mode"] == "synthetic"
+    assert payload["tunnel"]["url"].endswith("example.test")
+    assert all(service["active"] for service in payload["services"])

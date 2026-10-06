@@ -4,6 +4,8 @@ Official-API Instagram automation for sending a private reply when someone comme
 
 ![Architecture diagram](docs/images/architecture.svg)
 
+![Raspberry monitoring dashboard using deterministic synthetic status](docs/screenshots/raspberry-monitor.png)
+
 ## Portfolio Highlights
 
 - Integration with Meta Webhooks and Instagram Private Replies.
@@ -15,6 +17,15 @@ Official-API Instagram automation for sending a private reply when someone comme
 - Tests with fake payloads, without calling the real API.
 
 See also: [`docs/portfolio-case-study.md`](docs/portfolio-case-study.md).
+
+To reproduce the screenshot without reading local services, logs, hostnames or tunnel URLs:
+
+```bash
+MONITOR_DEMO_MODE=true uvicorn monitor.app:app --host 127.0.0.1 --port 8091
+```
+
+The demo mode returns a fixed fictional Raspberry status and never calls `systemctl`, `journalctl`
+or the production health endpoint.
 
 The project uses Python, FastAPI, Meta Webhooks, SQLite and Instagram Private Replies. The goal is to avoid browser automation, scraping and Selenium for a workflow that needs to be reliable on a Raspberry Pi.
 
