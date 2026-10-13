@@ -1,5 +1,7 @@
 # Instagram STL Auto DM
 
+🇧🇷 [Leia este README em Português (Brasil)](README.pt-BR.md).
+
 Official-API Instagram automation for sending a private reply when someone comments a configured keyword, such as `STL`, on a selected post.
 
 ![Architecture diagram](docs/images/architecture.svg)
